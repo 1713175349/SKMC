@@ -4,9 +4,6 @@
 class box
 {
 private:
-
-
-public:
     int Number;//site的数量
     int MaxSite;//最大Site数量
     std::vector<int> mysites;//所有site
@@ -15,7 +12,8 @@ public:
     std::vector<int> ***areas;//局域
     site *sitelist;//存储所有的site
     std::vector<int> empty_site;//所有空位点
-    box();
+
+public:
     box(double ba,double bb,double bc,int na,int nb,int nc,int sitemax);
     ~box();
     site *add_site(double x,double y,double z);//添加一个site
@@ -52,8 +50,6 @@ box::box(double ba,double bb,double bc,int na,int nb,int nc,int sitemax)
     
 }
 
-box::box(){}
-
 box::~box()
 {
     delete [] sitelist;
@@ -89,7 +85,6 @@ site *box::add_site(double x,double y,double z){
     ns->areaid[2]=nz;
     ns->siteid=new_site_n;
     ns->isusing=true;
-    Number++;
     return ns;
 }
 
