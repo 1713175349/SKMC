@@ -52,7 +52,7 @@ int kmc::choose_event(){
     int len=ev.size();
     double rate_list[ev.size()];
     rate_list[0] = event_storage[ev[0]].rate;
-    for (int i = i; i < len; i++)
+    for (int i = 0; i < len; i++)
     {
         rate_list[i] = rate_list[i-1]+event_storage[ev[i]].rate;
     }
