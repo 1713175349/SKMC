@@ -6,6 +6,7 @@ struct vertex
 {
     double position[3];
     int id;
+    int type;
     int neighNumber;
     std::vector<int> neighboors;
 };
@@ -15,6 +16,7 @@ class struct_template
 private:
     /* data */
 public:
+    char name[30];//名字
     vertex *nodes;
     int noden;
     int eventn;
@@ -38,7 +40,7 @@ struct_template::struct_template(int n,int m)
     for (int i = 0; i < m; i++)
     {
         start_state[i] = new int[n];
-        start_state[i] = new int[n];
+        end_state[i] = new int[n];
     }
     
     
@@ -50,7 +52,7 @@ struct_template::~struct_template()
     for (int i = 0; i < eventn; i++)
     {
         delete [] start_state[i] ;
-        delete [] start_state[i] ;
+        delete [] end_state[i] ;
     }
     delete [] start_state;
     delete [] end_state;
@@ -64,9 +66,9 @@ struct_template * read_file_to_temp(const char *filename){
     vertex *nvertex;
     int Nmax=1000;
     char buffer[Nmax];
-    cout<<"ready read";
+    //cout<<"ready read";
     fp.open(filename,ios::in);
-    cout<<"read";
+    //cout<<"read";
     fp.getline(buffer,Nmax);//掐头
     fp.getline(buffer,Nmax);
     int nodesNumber,EventNumber;
@@ -83,6 +85,7 @@ struct_template * read_file_to_temp(const char *filename){
         sbuf >> nvertex->position[0];
         sbuf >> nvertex->position[1];
         sbuf >> nvertex->position[2];
+        sbuf >> nvertex->type;
         sbuf >> nvertex->neighNumber;
         for (int j = 0; j < nvertex->neighNumber; j++)
         {   

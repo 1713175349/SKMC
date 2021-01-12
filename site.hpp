@@ -13,6 +13,8 @@ public:
     int type;//该site的类型
     int state;//该位点的状态
     std::vector<int> site_events;//该site的所有event id
+    std::vector<std::vector<int>> embed_list;
+    std::vector<int> embed_framework_id;
     site(/* args */);
     ~site();
 };
