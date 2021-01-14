@@ -1,0 +1,31 @@
+#a b c na nb nc
+1 1 1 20 20 20 10000
+
+#la la lb nla nlb nlc
+1.0 0 0 10
+0.0 1 0 10
+0 0 2.0 1
+
+#Origin Position
+0.1 0.1 0.1
+
+#site number in every cell
+2
+
+# id site Position type （id 按顺序）
+0 0.0 0.0 0.0 0
+1 0.5 0.5 0.0 0
+
+#neigbors id neigborsNumber (每个site 都要描述)
+0 4
+0 0 0 1
+-1 0 0 1
+0 -1 0 1
+-1 -1 0 1
+1 4
+0 0 0 0
+1 0 0 0
+0 1 0 0
+1 1 0 0
+
+#附加的site自定义

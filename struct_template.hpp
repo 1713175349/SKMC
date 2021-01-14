@@ -1,3 +1,4 @@
+#pragma once
 #include<vector>
 #include<fstream>
 #include<iostream>
@@ -64,7 +65,7 @@ struct_template * read_file_to_temp(const char *filename){
     istringstream sbuf;
     int bufint;
     vertex *nvertex;
-    int Nmax=1000;
+    const int Nmax=1000;
     char buffer[Nmax];
     //cout<<"ready read";
     fp.open(filename,ios::in);
