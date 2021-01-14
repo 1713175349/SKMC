@@ -1,4 +1,4 @@
-#结构框架
+#结构框架 id Position(绝对坐标) type neigborsNumber neigbors
 2   3
 0  1.0  2.0  3.0  0  1  1  
 1  2.0  0.0  0.0  1  1  0

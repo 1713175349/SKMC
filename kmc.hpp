@@ -30,12 +30,15 @@ public:
     int update_site_event(int siteid);//更新site的事件
     double getrate(int siteid,int frame_id,int eventid);//得到事件速率
     int add_all_event_of_site(int siteid);//对没有事件的site添加event
-    //int add_site_frame(int site_id,int frame_id);
+    int add_site_frame(int site_id,int frame_id);
     bool is_match_events(int siteid,int embedid,int eventid);//某个格点的某个嵌入是否匹配某个事件（相对于frame)
     int delete_site_event(int site_id);//删除某个site的所有事件
     int update_area_with_site(int siteid);//更新某个area
     int perform_with_event(int change_event);//执行某个事件
-    
+    int init_all_event();//初始化所有的事件
+    int run_one_step();//完整的运行一步
+    int init();
+    int run_N(int N);
     ~kmc();
 };
 
@@ -52,6 +55,7 @@ kmc::kmc(int seed)
         event_storage[i].id = i;//很重要
         free_events.insert(i);
     }
+    frame.push_back(*(read_file_to_temp("template_example.dat")));
 }
 
 kmc::~kmc()
@@ -184,26 +188,58 @@ int kmc::update_area_with_site(int siteid){
                     {
                         update_site_event(hg);
                     }
-                    
                 }
             }
-            
         }
-        
     }
+    return 0;
 }
 
 int kmc::perform_with_event(int change_event){
-    event *nevent=event_storage[change_event];
-    site *nsite=lattice->sitelist[nevent->event_site];
+    event *nevent=event_storage+change_event;
+    site *nsite=lattice->sitelist+nevent->event_site;
     int frameid=nevent->frame_index;
     int embedid=nevent->embed_index;
     int frame_event_index=nevent->frame_e_index;
     for (int i = 0; i < nsite->embed_list[embedid].size(); i++)
     {
-        if (frame[frameid].end_state[i] != -1){
-            lattice->sitelist[nsite->embed_list[embedid][i]]=frame[frameid].end_state[i];
+        if (frame[frameid].end_state[frame_event_index][i] != -1){
+            lattice->sitelist[nsite->embed_list[embedid][i]].state=frame[frameid].end_state[frame_event_index][i];
         }
     }
     return 0;   
 }
+
+int kmc::init_all_event(){
+    for (auto i: lattice->mysites){
+        update_site_event(i);
+    }
+    return 0;
+}
+
+int kmc::run_one_step(){
+    double dt;
+    int eventid;
+    eventid=choose_event(&dt);
+    perform_with_event(eventid);
+    update_area_with_site(event_storage[eventid].event_site);
+    t += dt;
+    return eventid;
+}
+
+int kmc::init(){
+    init_all_event();
+    return 0;
+}
+
+int kmc::run_N(int N){
+    for (int i = 0; i < N; i++)
+    {
+        run_one_step();
+    }
+    return 0;
+}
+
+// int kmc::add_site_frame(int site_id,int frame_id){
+
+// }
