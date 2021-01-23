@@ -256,16 +256,13 @@ void mproduct(const double A[9], const double X[3], double o[3])
   }
 }
 
-bool ismatch(const double A[9], const double X[3],const double center[3],const double target,double error){
-    double a[3],b[3],c[3];
+bool ismatch(const double A[9], const double X[3],const double center[3],const double *target,double error){
+    double a[3],c[3];
     a[0]=X[0]-center[0];
     a[1]=X[1]-center[1];
     a[2]=X[2]-center[2];
-    b[0]=X[0]-center[0];
-    b[1]=X[1]-center[1];
-    b[2]=X[2]-center[2];
     mproduct(A,a,c);
-    if (fabs(c[0]-b[0])<error && fabs(c[1]-b[1])<error && fabs(c[2]-b[2])<error){
+    if (fabs(c[0]-target[0])<error && fabs(c[1]-target[1])<error && fabs(c[2]-target[2])<error){
         return true;
     }
     return false;

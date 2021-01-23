@@ -31,7 +31,6 @@ public:
     int choose_event(double *dt);
     //int init_box_site();//初始化格点，包括添加所有格点，更新嵌入对应
     int add_frame_embeding_of_site();
-    int add_site_frame(int site_id,int frame_id);//对某个点潜入frame
     int update_site_event(int siteid);//更新site的事件
     double getrate(int siteid,int frame_id,int eventid);//得到事件速率
     int add_all_event_of_site(int siteid);//对没有事件的site添加event
@@ -248,7 +247,7 @@ int kmc::run_N(int N){
 }
 
 double length_vector(double *a){
-    return arma::sqrt<double>(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]).real();
+    return sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
 }
 
 double inner_product(double *a,double *b){
@@ -305,7 +304,7 @@ int kmc::add_site_frame(int site_id,int frame_id){
                                         }
                                         if(embede_list[index_fnbode]<0){
 
-                                            goto dontmatch;//不匹配
+                                           goto jump;//不匹配
                                         }
                                     }
                                 }
@@ -325,7 +324,8 @@ int kmc::add_site_frame(int site_id,int frame_id){
                 }
             }
 
-dontmatch:
+jump:
+embede_list[0]=-1;//没有这一句不知道为什么不能编译
         }
     }
     delete [] embede_list;
