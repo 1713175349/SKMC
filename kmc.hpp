@@ -4,6 +4,9 @@
 #include<set>
 #include<random>
 #include "struct_template.hpp"
+#include<armadillo>
+#include "match.hpp"
+
 class kmc
 {
 private:
@@ -26,11 +29,14 @@ public:
     event *add_event();//添加一个事件
     int delete_event(int id);
     int choose_event(double *dt);
-    int init_box_site();//初始化格点，包括添加所有格点，更新嵌入对应
+    //int init_box_site();//初始化格点，包括添加所有格点，更新嵌入对应
+    int add_frame_embeding_of_site();
+    int add_site_frame(int site_id,int frame_id);//对某个点潜入frame
     int update_site_event(int siteid);//更新site的事件
     double getrate(int siteid,int frame_id,int eventid);//得到事件速率
     int add_all_event_of_site(int siteid);//对没有事件的site添加event
-    int add_site_frame(int site_id,int frame_id);
+    int add_site_frame(int site_id,int frame_id);//对某个site,添加所有该frame的embed
+    int init_all_embeding();
     bool is_match_events(int siteid,int embedid,int eventid);//某个格点的某个嵌入是否匹配某个事件（相对于frame)
     int delete_site_event(int site_id);//删除某个site的所有事件
     int update_area_with_site(int siteid);//更新某个area
@@ -56,6 +62,7 @@ kmc::kmc(int seed)
         free_events.insert(i);
     }
     frame.push_back(*(read_file_to_temp("template_example.dat")));
+    frameNumber=1;
 }
 
 kmc::~kmc()
@@ -240,6 +247,98 @@ int kmc::run_N(int N){
     return 0;
 }
 
-// int kmc::add_site_frame(int site_id,int frame_id){
+double length_vector(double *a){
+    return arma::sqrt<double>(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]).real();
+}
 
-// }
+double inner_product(double *a,double *b){
+    return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+}
+
+
+int kmc::add_site_frame(int site_id,int frame_id){
+    struct_template *nf=&(frame[frame_id]);
+    double error1=0.1,error2;
+    double *a=nf->nodes[(nf->nodes[0].neighboors[0])].position;
+    double *b=nf->nodes[(nf->nodes[0].neighboors[1])].position;
+    double a2[3],b2[3];
+    double M[9];//存储变换矩阵
+    int *embede_list=new int[nf->noden];
+    site *nowsite = lattice->sitelist+site_id;
+    for (int i = 0; i < nowsite->neighbors.size(); i++)
+    {
+        for (int j = 0; j < nowsite->neighbors.size(); j++)
+        {
+            if(i!= j){
+                a2[0]=lattice->sitelist[nowsite->neighbors[i]].position[0]-nowsite->position[0];
+                a2[1]=lattice->sitelist[nowsite->neighbors[i]].position[1]-nowsite->position[1];
+                a2[2]=lattice->sitelist[nowsite->neighbors[i]].position[2]-nowsite->position[2];
+                b2[0]=lattice->sitelist[nowsite->neighbors[j]].position[0]-nowsite->position[0];
+                b2[1]=lattice->sitelist[nowsite->neighbors[j]].position[1]-nowsite->position[1];
+                b2[2]=lattice->sitelist[nowsite->neighbors[j]].position[2]-nowsite->position[2];
+            
+                if (fabs(length_vector(a)-length_vector(a2))<error1 && fabs(length_vector(b)-length_vector(b2))<error1 && fabs(inner_product(a,b)-inner_product(a2,b2))<error1){
+                    generate_rotation(a2,b2,a,b,M);
+                    //由变换矩阵得到嵌入的算法
+                    for (int kkk = 0; kkk < nf->noden; kkk++)
+                    {
+                        embede_list[kkk] = -1;
+                    }
+                    embede_list[0]=nowsite->siteid;
+                    embede_list[nf->nodes[0].neighboors[0]] = nowsite->neighbors[i];
+                    embede_list[nf->nodes[0].neighboors[1]] = nowsite->neighbors[j];
+                    for(int num_of_nodes=nf->noden-3;num_of_nodes > 0;){
+                        for (int index_fnbode = 0; index_fnbode < nf->noden; index_fnbode++)
+                        {
+                            if(embede_list[index_fnbode]<0){
+                                for(int index=0;index<nf->nodes[index_fnbode].neighNumber;index++){
+                                    if(embede_list[nf->nodes[index_fnbode].neighboors[index]]>=0){
+                                        site *nb_site=lattice->sitelist+embede_list[nf->nodes[index_fnbode].neighboors[index]];
+                                        for (int jji = 0; jji < nb_site->neighbors.size(); jji++)
+                                        {
+                                            if(ismatch(M,lattice->sitelist[nb_site->neighbors[jji]].position,nowsite->position,nf->nodes[index_fnbode].position,error1)){
+                                                embede_list[index_fnbode]=lattice->sitelist[nb_site->neighbors[jji]].siteid;
+                                                num_of_nodes --;
+                                                continue;
+                                            }
+                                        
+                                        }
+                                        if(embede_list[index_fnbode]<0){
+
+                                            goto dontmatch;//不匹配
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                    }
+                    
+                    //frame嵌入添加到site
+                    nowsite->embed_framework_id.push_back(frame_id);
+                    nowsite->embed_list.push_back(std::vector<int>());
+                    for (int ipi = 0; ipi < nf->noden; ipi++)
+                    {
+                        nowsite->embed_list.back().push_back(embede_list[ipi]);
+                    }
+                    
+                }
+            }
+
+dontmatch:
+        }
+    }
+    delete [] embede_list;
+    return 0;
+}
+
+int kmc::init_all_embeding(){
+    for(auto i:lattice->mysites){
+        for (int j = 0; j < frameNumber; j++)
+        {
+            add_site_frame(i,j);
+        }
+        
+    }
+    return 0;
+}

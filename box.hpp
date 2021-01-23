@@ -211,7 +211,7 @@ box::box(const char *boxfile){
         sbuf.str(buff);
         sbuf.seekg(std::ios_base::beg);
         sbuf>>site_id_cell;
-        sbuf>>sites_position[site_id_cell][0]>>sites_position[site_id_cell][2]>>sites_position[site_id_cell][2];
+        sbuf>>sites_position[site_id_cell][0]>>sites_position[site_id_cell][1]>>sites_position[site_id_cell][2];
         sbuf>>sites_type[site_id_cell];
     }
     
@@ -304,7 +304,7 @@ std::string box::out_to_xyz(){
     xyzst<<"box\n";
     for (auto i : mysites)
     {
-        xyzst<<sitelist[i].state<<"    "
+        xyzst<<sitelist[i].state<<"    " 
             <<sitelist[i].position[0]<<"    "
             <<sitelist[i].position[1]<<"    "
             <<sitelist[i].position[2]<<"    "<<"\n";
