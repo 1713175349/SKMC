@@ -264,11 +264,17 @@ int kmc::add_site_frame(int site_id,int frame_id){
     double M[9];//存储变换矩阵
     int *embede_list=new int[nf->noden];
     site *nowsite = lattice->sitelist+site_id;
+    if (nowsite->type != nf->nodes[0].type){return 0;}//site类型不匹配
     for (int i = 0; i < nowsite->neighbors.size(); i++)
     {
         for (int j = 0; j < nowsite->neighbors.size(); j++)
         {
             if(i!= j){
+                //类型不匹配
+                if(lattice->sitelist[nowsite->neighbors[i]].type != nf->nodes[(nf->nodes[0].neighboors[0])].type || lattice->sitelist[nowsite->neighbors[j]].type != nf->nodes[(nf->nodes[0].neighboors[1])].type){
+                    return 0;
+                }
+
                 a2[0]=lattice->sitelist[nowsite->neighbors[i]].position[0]-nowsite->position[0];
                 a2[1]=lattice->sitelist[nowsite->neighbors[i]].position[1]-nowsite->position[1];
                 a2[2]=lattice->sitelist[nowsite->neighbors[i]].position[2]-nowsite->position[2];
@@ -295,7 +301,7 @@ int kmc::add_site_frame(int site_id,int frame_id){
                                         site *nb_site=lattice->sitelist+embede_list[nf->nodes[index_fnbode].neighboors[index]];
                                         for (int jji = 0; jji < nb_site->neighbors.size(); jji++)
                                         {
-                                            if(ismatch(M,lattice->sitelist[nb_site->neighbors[jji]].position,nowsite->position,nf->nodes[index_fnbode].position,error1)){
+                                            if(lattice->sitelist[nb_site->neighbors[jji]].type == nf->nodes[index_fnbode].type && ismatch(M,lattice->sitelist[nb_site->neighbors[jji]].position,nowsite->position,nf->nodes[index_fnbode].position,error1)){
                                                 embede_list[index_fnbode]=lattice->sitelist[nb_site->neighbors[jji]].siteid;
                                                 num_of_nodes --;
                                                 continue;
