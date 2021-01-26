@@ -441,18 +441,18 @@ bool ismatch(const double A[9], const double X[3],const double center[3],const d
 
 
 
-// int main(){
-//     double a1[]={1,2,1},a2[]={0,1,2};
-//     double b1[]={2,1,1},b2[]={1,2,0};
-//     double o[9];
-//     generate_rotation(a1,a2,b1,b2,o);
-//     double c[3];
-//     mproduct(o,a1,c);
-//     std::cout<<c[0]<<" "<<c[1]<<"  "<<c[2]<<std::endl;
-//     for (int i = 0; i < 9; i++)
-//     {
-//         std::cout<<o[i]<<std::endl;
-//     }
+int main(){
+    double a1[]={1,2,1},a2[]={0,1,2};
+    double b1[]={2,1,1},b2[]={1,2,0};
+    double o[9];
+    generate_rotation(a1,a2,b1,b2,o);
+    double c[3];
+    mproduct(o,a1,c);
+    std::cout<<c[0]<<" "<<c[1]<<"  "<<c[2]<<std::endl;
+    for (int i = 0; i < 9; i++)
+    {
+        std::cout<<o[i]<<std::endl;
+    }
     
-//     return 0;
-// }
+    return 0;
+}

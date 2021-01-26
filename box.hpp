@@ -7,6 +7,7 @@
 #include<boost/multi_array.hpp>
 #include<iostream>
 #include<string>
+#include<set>
 class box
 {
 private:
@@ -28,6 +29,8 @@ public:
     site *add_site(double x,double y,double z);//添加一个site
     int add_edge(int i,int j);//i,j 为在sitelist中的位置
     std::string out_to_xyz();
+    std::string out_to_xyz(int st);//输出特定state的xyz
+    std::string out_to_xyz(std::set<int> sts);//输出集合内状态的xyz
     //int delete_site(int i);//删除位点，暂时没有需要
 };
 
@@ -89,6 +92,7 @@ site *box::add_site(double x,double y,double z){
     mysites.push_back(new_site_n);//添加到site列表
     //修改邻域
     site *ns=sitelist+new_site_n;
+    //初始化
     ns->position[0]=x;
     ns->position[1]=y;
     ns->position[2]=z;
@@ -97,6 +101,7 @@ site *box::add_site(double x,double y,double z){
     ns->areaid[2]=nz;
     ns->siteid=new_site_n;
     ns->isusing=true;
+    ns->state=0;
     Number++;
     return ns;
 }
@@ -230,9 +235,9 @@ box::box(const char *boxfile){
             {
                 for (int site_id_in_cell = 0; site_id_in_cell < site_cell_n; site_id_in_cell++)
                 {
-                    dealing = add_site(indexa*labc[0][0]+indexb*labc[1][0]+indexc*labc[2][0]+sites_position[site_id_in_cell][0],
-                                    indexa*labc[0][1]+indexb*labc[1][1]+indexc*labc[2][1]+sites_position[site_id_in_cell][1],
-                                    indexa*labc[0][2]+indexb*labc[1][2]+indexc*labc[2][2]+sites_position[site_id_in_cell][2]);
+                    dealing = add_site(indexa*labc[0][0]+indexb*labc[1][0]+indexc*labc[2][0]+sites_position[site_id_in_cell][0]+origin_position[0],
+                                    indexa*labc[0][1]+indexb*labc[1][1]+indexc*labc[2][1]+sites_position[site_id_in_cell][1]+origin_position[1],
+                                    indexa*labc[0][2]+indexb*labc[1][2]+indexc*labc[2][2]+sites_position[site_id_in_cell][2]+origin_position[2]);
                     dealing->type = sites_type[site_id_in_cell];
                     cells[indexa][indexb][indexc][site_id_in_cell]=dealing->siteid;
 
@@ -310,4 +315,39 @@ std::string box::out_to_xyz(){
             <<sitelist[i].position[2]<<"    "<<"\n";
     }
     return xyzst.str();
+}
+
+std::string box::out_to_xyz(int st){
+    std::stringstream xyzst;
+    int stnum=0;
+    xyzst<<"\n";
+    xyzst<<"box\n";
+    for (auto i : mysites)
+    {   
+        if (sitelist[i].state == st){
+            stnum ++;
+        xyzst<<sitelist[i].state<<"    " 
+            <<sitelist[i].position[0]<<"    "
+            <<sitelist[i].position[1]<<"    "
+            <<sitelist[i].position[2]<<"    "<<"\n";}
+    }
+    
+    return std::to_string(stnum)+xyzst.str();
+}
+
+std::string box::out_to_xyz(std::set<int> sts){
+    std::stringstream xyzst;
+    int stnum=0;
+    xyzst<<"\n";
+    xyzst<<"box\n";
+    for (auto i : mysites)
+    {   
+        if (sts.find(sitelist[i].state) != sts.end()){
+            stnum ++;
+        xyzst<<sitelist[i].state<<"    " 
+            <<sitelist[i].position[0]<<"    "
+            <<sitelist[i].position[1]<<"    "
+            <<sitelist[i].position[2]<<"    "<<"\n";}
+    }
+    return std::to_string(stnum)+xyzst.str();
 }

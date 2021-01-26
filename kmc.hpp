@@ -6,6 +6,7 @@
 #include "struct_template.hpp"
 #include<armadillo>
 #include "match.hpp"
+#include<iostream>
 
 class kmc
 {
@@ -30,12 +31,12 @@ public:
     int delete_event(int id);
     int choose_event(double *dt);
     //int init_box_site();//初始化格点，包括添加所有格点，更新嵌入对应
-    int add_frame_embeding_of_site();
+    //int add_frame_embeding_of_site();
     int update_site_event(int siteid);//更新site的事件
     double getrate(int siteid,int frame_id,int eventid);//得到事件速率
     int add_all_event_of_site(int siteid);//对没有事件的site添加event
     int add_site_frame(int site_id,int frame_id);//对某个site,添加所有该frame的embed
-    int init_all_embeding();
+    int init_all_embeding();//初始化所有嵌入
     bool is_match_events(int siteid,int embedid,int eventid);//某个格点的某个嵌入是否匹配某个事件（相对于frame)
     int delete_site_event(int site_id);//删除某个site的所有事件
     int update_area_with_site(int siteid);//更新某个area
@@ -43,7 +44,8 @@ public:
     int init_all_event();//初始化所有的事件
     int run_one_step();//完整的运行一步
     int init();
-    int run_N(int N);
+    int run_N(int N);//运行N步
+    int change_state();
     ~kmc();
 };
 
@@ -60,6 +62,7 @@ kmc::kmc(int seed)
         event_storage[i].id = i;//很重要
         free_events.insert(i);
     }
+    t=0;
     frame.push_back(*(read_file_to_temp("template_example.dat")));
     frameNumber=1;
 }
@@ -169,6 +172,20 @@ int kmc::update_site_event(int siteid){
 }
 
 double kmc::getrate(int siteid,int frame_id,int eventid){
+    switch (eventid)
+    {
+    case 0:
+        return 10;
+        break;
+    case 1:
+        return 20;
+        break;
+    case 2:
+        return 50;
+        break;
+    default:
+        break;
+    }
     return 0.1;
 }
 
@@ -189,7 +206,7 @@ int kmc::update_area_with_site(int siteid){
                 ixa=areaid[0]+i;
                 iya=areaid[1]+j;
                 iza=areaid[2]+k;
-                if (ixa>=0&&iya>=0&&iza>=0){
+                if (ixa>=0&&iya>=0&&iza>=0&&ixa<lattice->nbasisa&&iya<lattice->nbasisb&&iza<lattice->nbasisc){
                     for (auto hg : lattice->areas[ixa][iya][iza])
                     {
                         update_site_event(hg);
@@ -226,6 +243,7 @@ int kmc::init_all_event(){
 int kmc::run_one_step(){
     double dt;
     int eventid;
+    if (using_events.size()==0){std::cout<<"empty event set"<<std::endl;}
     eventid=choose_event(&dt);
     perform_with_event(eventid);
     update_area_with_site(event_storage[eventid].event_site);
@@ -234,6 +252,7 @@ int kmc::run_one_step(){
 }
 
 int kmc::init(){
+    init_all_embeding();
     init_all_event();
     return 0;
 }
@@ -257,7 +276,7 @@ double inner_product(double *a,double *b){
 
 int kmc::add_site_frame(int site_id,int frame_id){
     struct_template *nf=&(frame[frame_id]);
-    double error1=0.1,error2;
+    double error1=0.2,error2;
     double *a=nf->nodes[(nf->nodes[0].neighboors[0])].position;
     double *b=nf->nodes[(nf->nodes[0].neighboors[1])].position;
     double a2[3],b2[3];
@@ -347,4 +366,16 @@ int kmc::init_all_embeding(){
         
     }
     return 0;
+}
+
+int kmc::change_state(){
+    //计划用lua来初始化state
+    for(auto i : lattice->mysites){
+        site &now=lattice->sitelist[i];
+        if(now.position[0]<110 && now.position[0]>90 && now.position[1] <410 && now.position[1] >390){
+            now.state = 1;
+        }
+    }
+    return 1;
+    
 }
