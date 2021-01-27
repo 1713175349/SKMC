@@ -14,6 +14,7 @@ private:
     /* data */
 public:
     box *lattice;//格子
+    double kT=0.1;
     std::random_device rd;  //获取随机数种子
     std::mt19937 gen; //Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<double> dis;
@@ -53,7 +54,7 @@ kmc::kmc(int seed)
 {
     this->gen = std::mt19937(seed);
     this->dis = std::uniform_real_distribution<double>(0,1);
-    MaxEventNumber=100000;
+    MaxEventNumber=1000000;
     //lattice =new box(1.0,1.0,1.0,100,100,10,100000);
     lattice = new box("myboxlattice.dat");
     event_storage = new event[MaxEventNumber];
@@ -172,16 +173,50 @@ int kmc::update_site_event(int siteid){
 }
 
 double kmc::getrate(int siteid,int frame_id,int eventid){
+    
     switch (eventid)
     {
     case 0:
-        return 10;
+        return exp(-0.5/kT);
         break;
     case 1:
-        return 20;
+        return exp(-0.4/kT);
         break;
     case 2:
-        return 50;
+        return exp(-0.4/kT);
+        break;
+    case 3:
+        return exp(-0.4/kT);
+        break;
+    case 4:
+        return exp(-0.4/kT);
+        break;
+    case 5:
+        return exp(-0.6/kT);
+        break;
+    case 6:
+        return exp(-0.5/kT);
+        break;
+    case 7:
+        return exp(-1000.8/kT);
+        break;
+    case 8:
+        return exp(-0.55/kT);
+        break;
+    case 9:
+        return exp(-0.55/kT);
+        break;
+    case 10:
+        return exp(-0.5/kT);
+        break;
+    case 11:
+        return exp(-0.65/kT);
+        break;
+    case 12:
+        return exp(-0.5/kT);
+        break;
+    case 13:
+        return exp(-0.3/kT);
         break;
     default:
         break;
@@ -224,6 +259,7 @@ int kmc::perform_with_event(int change_event){
     int frameid=nevent->frame_index;
     int embedid=nevent->embed_index;
     int frame_event_index=nevent->frame_e_index;
+    std::cout<<frame_event_index<<std::endl;
     for (int i = 0; i < nsite->embed_list[embedid].size(); i++)
     {
         if (frame[frameid].end_state[frame_event_index][i] != -1){
@@ -253,6 +289,7 @@ int kmc::run_one_step(){
 
 int kmc::init(){
     init_all_embeding();
+    change_state();
     init_all_event();
     return 0;
 }
@@ -323,7 +360,7 @@ int kmc::add_site_frame(int site_id,int frame_id){
                                             if(lattice->sitelist[nb_site->neighbors[jji]].type == nf->nodes[index_fnbode].type && ismatch(M,lattice->sitelist[nb_site->neighbors[jji]].position,nowsite->position,nf->nodes[index_fnbode].position,error1)){
                                                 embede_list[index_fnbode]=lattice->sitelist[nb_site->neighbors[jji]].siteid;
                                                 num_of_nodes --;
-                                                continue;
+                                                goto finish1;
                                             }
                                         
                                         }
@@ -334,6 +371,8 @@ int kmc::add_site_frame(int site_id,int frame_id){
                                     }
                                 }
                             }
+                            finish1:
+                                error2=1;
                         }
                         
                     }
@@ -372,7 +411,7 @@ int kmc::change_state(){
     //计划用lua来初始化state
     for(auto i : lattice->mysites){
         site &now=lattice->sitelist[i];
-        if(now.position[0]<110 && now.position[0]>90 && now.position[1] <410 && now.position[1] >390){
+        if(now.position[0]<310 && now.position[0]>290 && now.position[1] <710 && now.position[1] >690){
             now.state = 1;
         }
     }
