@@ -15,7 +15,7 @@ int main(){
     //     std::cout<<i<<"  "<<r<<std::endl;
     // }
     aa.init_all_event();
-    aa.run_N(900);
+    aa.run_N(3000);
     std::fstream fp;
     fp.open("a.xyz",std::ios::out);
     fp<<aa.lattice->out_to_xyz(1);

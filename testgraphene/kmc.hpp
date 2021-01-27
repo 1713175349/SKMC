@@ -259,7 +259,7 @@ int kmc::perform_with_event(int change_event){
     int frameid=nevent->frame_index;
     int embedid=nevent->embed_index;
     int frame_event_index=nevent->frame_e_index;
-    std::cout<<frame_event_index<<std::endl;
+    //std::cout<<frame_event_index<<std::endl;
     for (int i = 0; i < nsite->embed_list[embedid].size(); i++)
     {
         if (frame[frameid].end_state[frame_event_index][i] != -1){
