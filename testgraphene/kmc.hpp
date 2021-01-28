@@ -34,7 +34,7 @@ public:
     //int init_box_site();//初始化格点，包括添加所有格点，更新嵌入对应
     //int add_frame_embeding_of_site();
     int update_site_event(int siteid);//更新site的事件
-    double getrate(int siteid,int frame_id,int eventid);//得到事件速率
+    virtual double getrate(int siteid,int frame_id,int eventid);//得到事件速率
     int add_all_event_of_site(int siteid);//对没有事件的site添加event
     int add_site_frame(int site_id,int frame_id);//对某个site,添加所有该frame的embed
     int init_all_embeding();//初始化所有嵌入
@@ -43,11 +43,11 @@ public:
     int update_area_with_site(int siteid);//更新某些area
     int perform_with_event(int change_event);//执行某个事件
     int init_all_event();//初始化所有的事件
-    int run_one_step();//完整的运行一步
+    virtual int run_one_step();//完整的运行一步
     int init();
     int run_N(int N);//运行N步
     int update_events_after_perform(int eventid);
-    int change_state();
+    virtual int change_state();
     ~kmc();
 };
 
