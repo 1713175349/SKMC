@@ -40,12 +40,13 @@ public:
     int init_all_embeding();//初始化所有嵌入
     bool is_match_events(int siteid,int embedid,int eventid);//某个格点的某个嵌入是否匹配某个事件（相对于frame)
     int delete_site_event(int site_id);//删除某个site的所有事件
-    int update_area_with_site(int siteid);//更新某个area
+    int update_area_with_site(int siteid);//更新某些area
     int perform_with_event(int change_event);//执行某个事件
     int init_all_event();//初始化所有的事件
     int run_one_step();//完整的运行一步
     int init();
     int run_N(int N);//运行N步
+    int update_events_after_perform(int eventid);
     int change_state();
     ~kmc();
 };
@@ -253,13 +254,52 @@ int kmc::update_area_with_site(int siteid){
     return 0;
 }
 
+int kmc::update_events_after_perform(int eventid){
+    std::set<int> uparea;//要更新的area
+    event &nev = event_storage[eventid];
+    int N=1;//更新领域范围
+    int ixa,iya,iza;
+    int areaid[3];
+    for(auto i: lattice->sitelist[nev.event_site].embed_list[nev.embed_index]){
+        areaid[0] = lattice->sitelist[i].areaid[0];
+        areaid[1] = lattice->sitelist[i].areaid[1];
+        areaid[2] = lattice->sitelist[i].areaid[2];
+        for (int i = -N; i <(N+1); i++)
+        {
+            for (int j = -N; j < (N+1); j++)
+            {
+                for (int k = -N; k < (N+1); k++)
+                {
+                    ixa=areaid[0]+i;
+                    iya=areaid[1]+j;
+                    iza=areaid[2]+k;
+                    if (ixa>=0&&iya>=0&&iza>=0&&ixa<lattice->nbasisa&&iya<lattice->nbasisb&&iza<lattice->nbasisc){
+                        uparea.insert(ixa*(lattice->nbasisb*lattice->nbasisc)+iya*(lattice->nbasisc)+iza);
+                    }
+                }
+            }
+        }
+    }
+    for(auto i: uparea){
+        iza=i%lattice->nbasisc;
+        iya=(i/lattice->nbasisc)%lattice->nbasisb;
+        ixa=(i/lattice->nbasisc)/lattice->nbasisb;
+        for (auto hg : lattice->areas[ixa][iya][iza])
+        {
+            update_site_event(hg);
+        }
+    }
+    return 0;
+}
+
+
 int kmc::perform_with_event(int change_event){
     event *nevent=event_storage+change_event;
     site *nsite=lattice->sitelist+nevent->event_site;
     int frameid=nevent->frame_index;
     int embedid=nevent->embed_index;
     int frame_event_index=nevent->frame_e_index;
-    std::cout<<frame_event_index<<std::endl;
+    //std::cout<<frame_event_index<<std::endl;
     for (int i = 0; i < nsite->embed_list[embedid].size(); i++)
     {
         if (frame[frameid].end_state[frame_event_index][i] != -1){
@@ -282,7 +322,8 @@ int kmc::run_one_step(){
     if (using_events.size()==0){std::cout<<"empty event set"<<std::endl;}
     eventid=choose_event(&dt);
     perform_with_event(eventid);
-    update_area_with_site(event_storage[eventid].event_site);
+    update_events_after_perform(eventid);
+    //update_area_with_site(event_storage[eventid].event_site);
     t += dt;
     return eventid;
 }
