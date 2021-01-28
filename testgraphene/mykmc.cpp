@@ -10,6 +10,7 @@ private:
     lua_State *L;
 
 public:
+    int Nsteps = 0;
     mykmc();
     double center[3];
     void update_center();
@@ -26,7 +27,9 @@ mykmc::mykmc():kmc(12){
     L=luaL_newstate();
     luaL_openlibs(L);
     luaL_dofile(L,"my.lua");
-
+    lua_getglobal(L,"runsteps");
+    Nsteps=(int)lua_tointeger(L,-1);
+    lua_pop(L,1);
 }
 
 
@@ -75,9 +78,9 @@ void mykmc::update_center(){
             cen[2] += lattice->sitelist[i].position[2];
         }
     }
-    cen[0]/=num;
-    cen[1]/=num;
-    cen[2]/=num;
+    center[0]=cen[0]/num;
+    center[1]=cen[1]/num;
+    center[2]=cen[2]/num;
 }
 
 int mykmc::run_one_step(){
@@ -108,7 +111,7 @@ int mykmc::change_state(){
 int main(){
     mykmc &aa=*(new mykmc());
     //aa.lattice->add_site(1,1,1);
-    std::cout<<aa.lattice->Number;
+    std::cout<<aa.lattice->Number<<std::endl;
     //aa.add_site_frame(604,0);
     aa.init_all_embeding();
     aa.change_state();
@@ -118,8 +121,10 @@ int main(){
     //     int &&r=aa.lattice->sitelist[i].embed_framework_id.size();
     //     std::cout<<i<<"  "<<r<<std::endl;
     // }
+    aa.update_center();
     aa.init_all_event();
-    aa.run_N(3000);
+    aa.run_N(aa.Nsteps);
+    std::cout<<aa.Nsteps<<std::endl;
     std::fstream fp;
     fp.open("a.xyz",std::ios::out);
     fp<<aa.lattice->out_to_xyz(1);
