@@ -60,6 +60,15 @@ def event_g(s,t):
     string2 = " ".join(list(map(lambda x:str(x),t1.tolist())))
     return string1+" | "+string2+" #"+s
 
+def diff_event_g(s,t):    
+    s1=get_state_sequence("./source/"+s, atoms1, eles)
+    t1=get_state_sequence("./target/"+t, atoms1, eles)
+    sn=""
+    for i in range(len(s1)):
+        if s1[i] != t1[i]:
+            sn += (str(i)+" ")
+    return sn+" #"+s+""
+
 s='''zigzag-kink-propagrators1.car
 amarchair-kinks1.car
 amarchair-kinks2.car
@@ -92,5 +101,6 @@ fp.write("\n")
 index=0
 for i,v in st:
     fp.write(event_g(i,v)+"  "+str(index)+"\n")
+    print(diff_event_g(i,v)+"  "+str(index)+"\n")
     index += 1
 fp.close()

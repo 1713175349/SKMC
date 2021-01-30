@@ -11,6 +11,7 @@ private:
 
 public:
     int Nsteps = 0;
+    int Num_site1=0;
     mykmc();
     double center[3];
     void update_center();
@@ -19,7 +20,10 @@ public:
     int lua_lattice_state(double x,double y, double z,int type);
     double lua_get_rate(double x,double y, double z,int frameid,int eventid,double cx,double cy, double cz);
     double getrate(int siteid,int frame_id,int eventid) override;
+    int add_all_event_of_site(int siteid) override;
+    int perform_with_event(int change_event) override;
     int run_one_step() override;
+    int init() override;
     ~mykmc();
 };
 
@@ -30,6 +34,12 @@ mykmc::mykmc():kmc(12){
     lua_getglobal(L,"runsteps");
     Nsteps=(int)lua_tointeger(L,-1);
     lua_pop(L,1);
+    //添加附加数据描述浓度
+    for (int i = 0; i < lattice->MaxSite; i++)
+    {
+        lattice->sitelist[i].add_data(1);
+    }
+    frame.push_back(*(read_file_to_temp("diffusion.dat")));
 }
 
 
@@ -83,14 +93,26 @@ void mykmc::update_center(){
     center[2]=cen[2]/num;
 }
 
+int mykmc::perform_with_event(int change_event){
+    if (event_storage[change_event].type==-1&&event_storage[change_event].frame_index==0){
+    perform_with_frame_event(change_event);
+    update_events_after_perform(change_event);
+    }else if(event_storage[change_event].type==1){//扩散事件
+
+    }else if(event_storage[change_event].type ==-1&&event_storage[change_event].frame_index == 1) //沉积
+    {
+        /* code */
+    }
+    
+
+}
 int mykmc::run_one_step(){
     double dt;
     int eventid;
     if (using_events.size()==0){std::cout<<"empty event set"<<std::endl;}
     eventid=choose_event(&dt);
-    perform_with_event(eventid);
-    update_events_after_perform(eventid);
-    update_center();
+    perform_with_event(eventid);//包含执行后处理
+    
     //update_area_with_site(event_storage[eventid].event_site);
     t += dt;
     return eventid;
@@ -100,12 +122,50 @@ int mykmc::change_state(){
     for(auto i : lattice->mysites){
         site &now=lattice->sitelist[i];
         now.state=lua_lattice_state(now.position[0],now.position[1],now.position[2],now.type);
-        
+        if(now.state == 1){
+            Num_site1 ++;
+        }
     }
     return 1;
 }
 
+int mykmc::add_all_event_of_site(int siteid){
+    site *nsite=lattice->sitelist+siteid;
+    event *now_event;
+    struct_template *nframe;
+    int frameid;
+    int num_e=0;
+    for (int i = 0; i < nsite->embed_framework_id.size(); i++)
+    {   
+        frameid = nsite->embed_framework_id[i];
+        nframe = &(frame[frameid]);
+        for (int k = 0; k < nframe->eventn; k++)
+        {
+            if (is_match_events(siteid,i,k)){
+                now_event = add_event();
+                now_event->event_site=siteid;
+                now_event->embed_index=i;
+                now_event->frame_index=frameid;
+                now_event->frame_e_index=k;
+                now_event->primary_rate=getrate(siteid,frameid,k);
+                now_event->type=-1;//表示为frame定义的类型
+                num_e ++;
+                nsite->site_events.push_back(now_event->id);
+            }
+        }
+    }
+    return num_e;
+}
 
+int mykmc::init(){
+    init_all_embeding();
+    change_state();
+    init_all_event();
+    event &kuosan = *add_event();
+    kuosan.type=1;
+    kuosan.rate=(lattice->mysites.size()-Num_site1)*0.1;
+
+}
 
 
 int main(){
@@ -113,16 +173,7 @@ int main(){
     //aa.lattice->add_site(1,1,1);
     std::cout<<aa.lattice->Number<<std::endl;
     //aa.add_site_frame(604,0);
-    aa.init_all_embeding();
-    aa.change_state();
-    //aa.add_site_frame(0,0);
-    // for (auto i: aa.lattice->mysites)
-    // {
-    //     int &&r=aa.lattice->sitelist[i].embed_framework_id.size();
-    //     std::cout<<i<<"  "<<r<<std::endl;
-    // }
-    aa.update_center();
-    aa.init_all_event();
+    aa.init();
     aa.run_N(aa.Nsteps);
     std::cout<<aa.Nsteps<<std::endl;
     std::fstream fp;
