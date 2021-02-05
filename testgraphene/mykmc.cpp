@@ -74,7 +74,16 @@ double mykmc::lua_get_rate(double x,double y, double z,int frameid,int eventid,d
 
 double mykmc::getrate(int siteid,int frame_id,int eventid){
     site &ns=lattice->sitelist[siteid];
-    return lua_get_rate(ns.position[0],ns.position[1],ns.position[2],frame_id,eventid,center[0],center[1],center[2]);
+    event &ne=event_storage[eventid];
+    int chg_site[14] = {28,21,20,21,20,21,20,0,20,21,21,21,0,0};//定义事件中改变的site
+    if (frame_id == 0){
+        int change_site_id = ns.embed_list[ne.embed_index][chg_site[ne.frame_e_index]];
+        return lua_get_rate(ns.position[0],ns.position[1],ns.position[2],frame_id,eventid,center[0],center[1],center[2])*lattice->sitelist[change_site_id].data[0];
+    }else
+    {//浓度改变事件
+        return 0.1;
+    }
+    
 }
 
 void mykmc::update_center(){
@@ -95,15 +104,17 @@ void mykmc::update_center(){
 
 int mykmc::perform_with_event(int change_event){
     if (event_storage[change_event].type==-1&&event_storage[change_event].frame_index==0){
-    perform_with_frame_event(change_event);
-    update_events_after_perform(change_event);
+        perform_with_frame_event(change_event);
+        //生长之后应该改变浓度
+        update_events_after_perform(change_event);
     }else if(event_storage[change_event].type==1){//扩散事件
 
     }else if(event_storage[change_event].type ==-1&&event_storage[change_event].frame_index == 1) //沉积
     {
-        /* code */
+        lattice->sitelist[event_storage[change_event].event_site].data[0] += 1;//增加浓度
+        update_events_after_perform(change_event);
     }
-    
+    return 0;
 
 }
 int mykmc::run_one_step(){
@@ -147,7 +158,7 @@ int mykmc::add_all_event_of_site(int siteid){
                 now_event->embed_index=i;
                 now_event->frame_index=frameid;
                 now_event->frame_e_index=k;
-                now_event->primary_rate=getrate(siteid,frameid,k);
+                now_event->rate=getrate(siteid,frameid,k);
                 now_event->type=-1;//表示为frame定义的类型
                 num_e ++;
                 nsite->site_events.push_back(now_event->id);
@@ -164,7 +175,7 @@ int mykmc::init(){
     event &kuosan = *add_event();
     kuosan.type=1;
     kuosan.rate=(lattice->mysites.size()-Num_site1)*0.1;
-
+    return 0;
 }
 
 

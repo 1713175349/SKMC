@@ -19,7 +19,7 @@ end
 
 function getrate(x,y,z,frameid,eventid,cx,cy,cz)
     -- print "getrate"
-    r=math.sqrt((cx-x)^2+(cy-y)^2+(cz-z)^2)
+    --r=math.sqrt((cx-x)^2+(cy-y)^2+(cz-z)^2)
     local rate={0.5,0.4,0.4,0.4,0.4,0.6,0.5,1.3,0.55,0.55,0.5,0.65,0.5,0.3}
-    return math.exp(-rate[eventid+1]*10)*r^5
+    return math.exp(-rate[eventid+1]*10)
 end

@@ -20,7 +20,7 @@ def read_car(fname):
 
 def get_state_sequence(fname, atoms, eles):
     myatoms, myeles = read_car(fname)
-    er = 0.1
+    er = 0.01
     A = np.zeros(len(myeles), dtype=np.int)
     for i in range(len(eles)):
         for j in range(len(eles)):   # 遍历myatoms
@@ -90,9 +90,9 @@ amarchair-kinkt4.car
 amarchair-t1.car
 amarchair-t2.car
 danjinlinxifut1.car
-zigzag-kink-prot2.car
 zigzag-kinkt2.car
 zigzag-kinkt3.car
+zigzag-kink-prot2.car
 zigzag-t1.car'''
 
 st=list(zip(s.split(),t.split()))

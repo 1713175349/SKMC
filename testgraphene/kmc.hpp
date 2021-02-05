@@ -297,6 +297,7 @@ int kmc::update_events_after_perform(int eventid){
 
 int kmc::perform_with_event(int change_event){
     perform_with_frame_event(change_event);
+    return 0;
 }
 
 int kmc::perform_with_frame_event(int change_event){

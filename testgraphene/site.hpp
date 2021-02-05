@@ -50,7 +50,7 @@ int site::add_data(int length){
         data=new double[length];
         return 1;
     }
-    return 0
+    return 0;
 }
 
 int site::add_idata(int length){
@@ -60,7 +60,7 @@ int site::add_idata(int length){
         idata=new int[length];
         return 1;
     }
-    return 0
+    return 0;
 }
 
 class event
