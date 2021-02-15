@@ -1,13 +1,13 @@
-#a b c na nb nc
-5 5 5 200 200 1 50000
+#a b c na nb nc maxsite
+10 10 10 200 200 1 200000
 
 #la la lb nla nlb nlc
-2.14 -1.23 0 100
-0.0 2.47 0 100
+2.14 -1.23 0 300
+0.0 2.47 0 300
 0 0 2.0 1
 
 #Origin Position
-0.1 300 0.1
+0.1 600 0.1
 
 #site number in every cell
 2

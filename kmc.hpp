@@ -34,20 +34,21 @@ public:
     //int init_box_site();//初始化格点，包括添加所有格点，更新嵌入对应
     //int add_frame_embeding_of_site();
     int update_site_event(int siteid);//更新site的事件
-    double getrate(int siteid,int frame_id,int eventid);//得到事件速率
-    int add_all_event_of_site(int siteid);//对没有事件的site添加event
+    virtual double getrate(int siteid,int frame_id,int eventid);//得到事件速率
+    virtual int add_all_event_of_site(int siteid);//对没有事件的site添加event
     int add_site_frame(int site_id,int frame_id);//对某个site,添加所有该frame的embed
     int init_all_embeding();//初始化所有嵌入
     bool is_match_events(int siteid,int embedid,int eventid);//某个格点的某个嵌入是否匹配某个事件（相对于frame)
     int delete_site_event(int site_id);//删除某个site的所有事件
     int update_area_with_site(int siteid);//更新某些area
-    int perform_with_event(int change_event);//执行某个事件
+    virtual int perform_with_event(int change_event);//执行某个事件
+    int perform_with_frame_event(int change_event);//执行框架嵌入对应的事件
     int init_all_event();//初始化所有的事件
-    int run_one_step();//完整的运行一步
-    int init();
+    virtual int run_one_step();//完整的运行一步
+    virtual int init();
     int run_N(int N);//运行N步
-    int update_events_after_perform(int eventid);
-    int change_state();
+    int update_events_after_perform(int eventid);//执行事件后的更新事件列表
+    virtual int change_state();
     ~kmc();
 };
 
@@ -160,6 +161,7 @@ int kmc::add_all_event_of_site(int siteid){
                 now_event->frame_index=frameid;
                 now_event->frame_e_index=k;
                 now_event->rate=getrate(siteid,frameid,k);
+                now_event->type=-1;//表示为frame定义的类型
                 num_e ++;
                 nsite->site_events.push_back(now_event->id);
             }
@@ -294,6 +296,11 @@ int kmc::update_events_after_perform(int eventid){
 
 
 int kmc::perform_with_event(int change_event){
+    perform_with_frame_event(change_event);
+    return 0;
+}
+
+int kmc::perform_with_frame_event(int change_event){
     event *nevent=event_storage+change_event;
     site *nsite=lattice->sitelist+nevent->event_site;
     int frameid=nevent->frame_index;
@@ -354,13 +361,18 @@ double inner_product(double *a,double *b){
 
 int kmc::add_site_frame(int site_id,int frame_id){
     struct_template *nf=&(frame[frame_id]);
+    site *nowsite = lattice->sitelist+site_id;
     double error1=0.2,error2;
+    if (nf->noden ==1){//支持只有一个点的frame
+        nowsite->embed_framework_id.push_back(frame_id);
+        nowsite->embed_list.push_back(std::vector<int>());
+        nowsite->embed_list.back().push_back(nowsite->siteid);
+    }
     double *a=nf->nodes[(nf->nodes[0].neighboors[0])].position;
     double *b=nf->nodes[(nf->nodes[0].neighboors[1])].position;
     double a2[3],b2[3];
     double M[9];//存储变换矩阵
     int *embede_list=new int[nf->noden];
-    site *nowsite = lattice->sitelist+site_id;
     if (nowsite->type != nf->nodes[0].type){return 0;}//site类型不匹配
     for (int i = 0; i < nowsite->neighbors.size(); i++)
     {
