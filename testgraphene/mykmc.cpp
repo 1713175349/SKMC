@@ -39,7 +39,7 @@ mykmc::mykmc():kmc(12){
     {
         lattice->sitelist[i].add_data(1);
     }
-    frame.push_back(*(read_file_to_temp("diffusion.dat")));
+    //frame.push_back(*(read_file_to_temp("diffusion.dat")));
 }
 
 
@@ -78,7 +78,7 @@ double mykmc::getrate(int siteid,int frame_id,int eventid){
     int chg_site[14] = {28,21,20,21,20,21,20,0,20,21,21,21,0,0};//定义事件中改变的site
     if (frame_id == 0){
         int change_site_id = ns.embed_list[ne.embed_index][chg_site[ne.frame_e_index]];
-        return lua_get_rate(ns.position[0],ns.position[1],ns.position[2],frame_id,eventid,center[0],center[1],center[2])*lattice->sitelist[change_site_id].data[0];
+        return lua_get_rate(ns.position[0],ns.position[1],ns.position[2],frame_id,eventid,center[0],center[1],center[2]);//*lattice->sitelist[change_site_id].data[0];
     }else
     {//浓度改变事件
         return 0.1;
@@ -172,9 +172,9 @@ int mykmc::init(){
     init_all_embeding();
     change_state();
     init_all_event();
-    event &kuosan = *add_event();
-    kuosan.type=1;
-    kuosan.rate=(lattice->mysites.size()-Num_site1)*0.1;
+    // event &kuosan = *add_event();
+    // kuosan.type=1;
+    // kuosan.rate=(lattice->mysites.size()-Num_site1)*0.1;
     return 0;
 }
 
@@ -185,11 +185,17 @@ int main(){
     std::cout<<aa.lattice->Number<<std::endl;
     //aa.add_site_frame(604,0);
     aa.init();
-    aa.run_N(aa.Nsteps);
+    //aa.run_N(aa.Nsteps);
     std::cout<<aa.Nsteps<<std::endl;
     std::fstream fp;
     fp.open("a.xyz",std::ios::out);
-    fp<<aa.lattice->out_to_xyz(1);
+    for(int i=0;i<aa.Nsteps;i++){
+        aa.run_one_step();
+        if (i%20==0){
+        fp<<aa.lattice->out_to_xyz(1);
+        fp<<"\n";
+        }
+    }
     fp.close();
     return 0;
 }

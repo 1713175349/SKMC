@@ -47,7 +47,7 @@ public:
     virtual int run_one_step();//完整的运行一步
     virtual int init();
     int run_N(int N);//运行N步
-    int update_events_after_perform(int eventid);
+    int update_events_after_perform(int eventid);//执行事件后的更新事件列表
     virtual int change_state();
     ~kmc();
 };
