@@ -56,7 +56,7 @@ kmc::kmc(int seed)
 {
     this->gen = std::mt19937(seed);
     this->dis = std::uniform_real_distribution<double>(0,1);
-    MaxEventNumber=1000000;
+    MaxEventNumber=3000000;
     //lattice =new box(1.0,1.0,1.0,100,100,10,100000);
     lattice = new box("myboxlattice.dat");
     event_storage = new event[MaxEventNumber];
@@ -76,6 +76,7 @@ kmc::~kmc()
 }
 
 event *kmc::add_event(){
+    assert(free_events.begin() != free_events.end());
     int nid = *free_events.begin();
     free_events.erase(free_events.begin());
     using_events.insert(nid);
@@ -91,7 +92,7 @@ int kmc::delete_event(int id){
 int kmc::choose_event(double *dt){
     std::vector<int> ev(using_events.begin(),using_events.end());
     int len=ev.size();
-    double rate_list[ev.size()];
+    double *rate_list=new double[ev.size()];
     rate_list[0] = event_storage[ev[0]].rate;
     for (int i = 0; i < len; i++)
     {
@@ -114,6 +115,7 @@ int kmc::choose_event(double *dt){
             a=middle;
         }
     }
+    delete [] rate_list;
     return ev[b];
 }
 
@@ -319,6 +321,7 @@ int kmc::perform_with_frame_event(int change_event){
 int kmc::init_all_event(){
     for (auto i: lattice->mysites){
         update_site_event(i);
+        //std::cout<<i<<"event_num:"<<using_events.size()<<std::endl;
     }
     return 0;
 }

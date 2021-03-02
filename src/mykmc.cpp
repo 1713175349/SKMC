@@ -1,4 +1,5 @@
 #include "kmc.hpp"
+#include<glog/logging.h>
 extern "C"{
     #include "lua.h"
     #include "lauxlib.h"
@@ -21,6 +22,8 @@ public:
     double lua_get_rate(double x,double y, double z,int frameid,int eventid,double cx,double cy, double cz);
     double getrate(int siteid,int frame_id,int eventid) override;
     double getConcentration(int siteid,int frame_id,int eventid);//获取事件对应点的浓度
+    int diffusion_all(double t);//整体浓度扩散
+    int init_concetration();//初始化浓度
     int add_all_event_of_site(int siteid) override;
     int perform_with_event(int change_event) override;
     int run_one_step() override;
@@ -36,12 +39,14 @@ mykmc::mykmc():kmc(12){
     lua_getglobal(L,"runsteps");
     Nsteps=(int)lua_tointeger(L,-1);
     lua_pop(L,1);
-    //添加附加数据描述浓度
+    //添加附加数据描述浓度//另一个用于扩散过程存储数据
     for (int i = 0; i < lattice->MaxSite; i++)
     {
-        lattice->sitelist[i].add_data(1);
+        lattice->sitelist[i].add_data(2);
     }
-    frame.push_back(*(read_file_to_temp("diffusion.dat")));
+    struct_template *dftemp=read_file_to_temp("diffusion.dat");
+    frame.push_back(*(dftemp));
+    frameNumber +=1;
 }
 
 
@@ -75,16 +80,17 @@ double mykmc::lua_get_rate(double x,double y, double z,int frameid,int eventid,d
 }
 
 double mykmc::getConcentration(int siteid,int frame_id,int eventid){
-    site &ns=lattice->sitelist[siteid];
-    event &ne=event_storage[eventid];
-    int chg_site[14] = {28,21,20,21,20,21,20,0,20,21,21,21,0,0};//定义事件中改变的site
-    if (frame_id == 0){
-        int change_site_id = ns.embed_list[ne.embed_index][chg_site[ne.frame_e_index]];
-        return lattice->sitelist[change_site_id].data[0];
-    }else
-    {//frame_id==1,不受浓度影响
-        return 1;
-    }
+    // site &ns=lattice->sitelist[siteid];
+    // event &ne=event_storage[eventid];
+    // int chg_site[14] = {28,21,20,21,20,21,20,0,20,21,21,21,0,0};//定义事件中改变的site
+    // if (frame_id == 0){
+    //     int change_site_id = ns.embed_list[ne.embed_index][chg_site[ne.frame_e_index]];
+    //     return lattice->sitelist[change_site_id].data[0];
+    // }else
+    // {//frame_id==1,不受浓度影响
+    //     return 1;
+    // }
+    return 1;
 }
 
 /*
@@ -94,13 +100,13 @@ double mykmc::getrate(int siteid,int frame_id,int eventid){
     site &ns=lattice->sitelist[siteid];
     event &ne=event_storage[eventid];
     //int chg_site[14] = {28,21,20,21,20,21,20,0,20,21,21,21,0,0};//定义事件中改变的site
-    if (frame_id == 0){
+    // if (frame_id == 0){
         //int change_site_id = ns.embed_list[ne.embed_index][chg_site[ne.frame_e_index]];
         return lua_get_rate(ns.position[0],ns.position[1],ns.position[2],frame_id,eventid,center[0],center[1],center[2]);//*lattice->sitelist[change_site_id].data[0];
-    }else
-    {//沉积事件速率
-        return 0.1;//TODO:需要改变速率
-    }
+    // }else
+    // {//沉积事件速率
+    //     return 0.1;//TODO:需要改变速率
+    // }
     
 }
 
@@ -123,7 +129,29 @@ void mykmc::update_center(){
 int mykmc::update_rate_after_concentration_changed(){
     for(auto ei:using_events){
         event &nowe=event_storage[ei];
-        nowe.rate=nowe.primary_rate*getConcentration(nowe.event_site,nowe.frame_index,ei);
+        if(nowe.frame_index =0 ){
+        nowe.rate=nowe.primary_rate*getConcentration(nowe.event_site,nowe.frame_index,ei);}
+    }
+    return 0;
+}
+
+int mykmc::diffusion_all(double t){
+    int nbnum;
+    double nbconcsum;
+    double k=1e5;
+    for(auto i:lattice->mysites){
+        nbnum=0;
+        nbconcsum=0;
+        for(auto j:lattice->sitelist[i].neighbors){
+            if (lattice->sitelist[j].state == 0){
+                nbnum ++;
+                nbconcsum += lattice->sitelist[j].data[0];
+            }
+        }
+        lattice->sitelist[i].data[1] = lattice->sitelist[i].data[0]-0.1*(nbnum*lattice->sitelist[i].data[0]-nbconcsum);
+    }
+    for(auto i:lattice->mysites){
+        lattice->sitelist[i].data[0] = lattice->sitelist[i].data[1];
     }
     return 0;
 }
@@ -149,9 +177,14 @@ int mykmc::run_one_step(){
     int eventid;
     if (using_events.size()==0){std::cout<<"empty event set"<<std::endl;}
     eventid=choose_event(&dt);
+    LOG(INFO)<<"当前时间"<<t<<"事件id："<<eventid<<"耗时："<<dt<<"frame id:"<<event_storage[eventid].frame_index
+            <<"event type id:"<<event_storage[eventid].frame_e_index<<"event site:"<<event_storage[eventid].event_site
+            <<"site position:"<<lattice->sitelist[event_storage[eventid].event_site].position[0]<<"  "<<lattice->sitelist[event_storage[eventid].event_site].position[1]<<"  "<<lattice->sitelist[event_storage[eventid].event_site].position[2];
     perform_with_event(eventid);//包含执行后处理
-    
-    //update_area_with_site(event_storage[eventid].event_site);
+    //根据dt扩散多少//生长吞掉单个点的浓度//生长后的点不参与扩散
+    diffusion_all(dt);
+    //重新确认所有速率
+    update_rate_after_concentration_changed();
     t += dt;
     return eventid;
 }
@@ -186,7 +219,7 @@ int mykmc::add_all_event_of_site(int siteid){
                 now_event->frame_index=frameid;
                 now_event->frame_e_index=k;
                 now_event->primary_rate=getrate(siteid,frameid,k);
-                now_event->rate=now_event->primary_rate*getConcentration(siteid,frameid,k);
+                now_event->rate=now_event->primary_rate*getConcentration(siteid,frameid,now_event->id);
                 now_event->type=-1;//表示为frame定义的类型
                 num_e ++;
                 nsite->site_events.push_back(now_event->id);
@@ -196,9 +229,17 @@ int mykmc::add_all_event_of_site(int siteid){
     return num_e;
 }
 
+int mykmc::init_concetration(){
+    for(auto i:lattice->mysites){
+        lattice->sitelist[i].data[0] = 0;
+    }
+    return 0;
+}
+
 int mykmc::init(){
     init_all_embeding();
     change_state();
+    init_concetration();
     init_all_event();
     // event &kuosan = *add_event();
     // kuosan.type=1;
@@ -206,24 +247,31 @@ int mykmc::init(){
     return 0;
 }
 
-
-int main(){
-    mykmc &aa=*(new mykmc());
-    //aa.lattice->add_site(1,1,1);
-    std::cout<<aa.lattice->Number<<std::endl;
-    //aa.add_site_frame(604,0);
-    aa.init();
-    //aa.run_N(aa.Nsteps);
-    std::cout<<aa.Nsteps<<std::endl;
+int main(int argc,char **argv){
+    google::InitGoogleLogging(argv[0]);
+    //mykmc &aa=*(new mykmc());
+    kmc &aa=*(new kmc(12));
     std::fstream fp;
     fp.open("a.xyz",std::ios::out);
+    // //aa.lattice->add_site(1,1,1);
+    LOG(INFO)<<"总site数："<<aa.lattice->Number;
+    // //aa.add_site_frame(604,0);
+    LOG(INFO)<<"INIT START";
+    aa.init();
+    LOG(INFO)<<"INIT END";
+    //aa.run_N(aa.Nsteps);
+    LOG(INFO)<<"运行步数："<<aa.Nsteps;
+    
     for(int i=0;i<aa.Nsteps;i++){
+        LOG(INFO)<<"第"<<i<<"步 start";
         aa.run_one_step();
-        if (i%20==0){
+        if (i%200==0){
+        LOG(INFO)<<"输出第"<<i<<"状态，"<<"原子数："<<aa.Num_site1;
         fp<<aa.lattice->out_to_xyz(1);
         fp<<"\n";
         }
     }
+    fp<<aa.lattice->out_to_xyz(1);
     fp.close();
     return 0;
 }

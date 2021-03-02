@@ -24,8 +24,19 @@ public:
     int **start_state;//开始时对应各个node的状态，-1，表示任意状态
     int **end_state;
     struct_template(int n,int m);
+    struct_template(const struct_template &cs);
+    struct_template(){}
     ~struct_template();
 };
+
+struct_template::struct_template(const struct_template &cs){
+    noden=cs.noden;
+    eventn=cs.eventn;
+    start_state=cs.start_state;
+    end_state=cs.end_state;
+    nodes=cs.nodes;
+}
+
 
 struct_template::struct_template(int n,int m)
 {
@@ -49,14 +60,14 @@ struct_template::struct_template(int n,int m)
 
 struct_template::~struct_template()
 {
-    delete [] nodes;
-    for (int i = 0; i < eventn; i++)
-    {
-        delete [] start_state[i] ;
-        delete [] end_state[i] ;
-    }
-    delete [] start_state;
-    delete [] end_state;
+    // delete [] nodes;
+    // for (int i = 0; i < eventn; i++)
+    // {
+    //     delete [] start_state[i] ;
+    //     delete [] end_state[i] ;
+    // }
+    // delete [] start_state;
+    // delete [] end_state;
 }
 
 struct_template * read_file_to_temp(const char *filename){
