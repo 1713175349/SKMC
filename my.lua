@@ -1,6 +1,6 @@
 print "load lua"
 
-runsteps=1001
+runsteps=30000
 
 function state(x,y,z,t)
     if x<310 and x>290 and y <810 and y>790 then

@@ -1,7 +1,7 @@
 [
 {
   "directory": "/home/zln/SKMC/build",
-  "command": "/usr/bin/c++ -I../include -g -o CMakeFiles/SKMC.dir/src/mykmc.cpp.o -c /home/zln/SKMC/src/mykmc.cpp",
-  "file": "/home/zln/SKMC/src/mykmc.cpp"
+  "command": "/usr/bin/c++ -I../include -O3 -o CMakeFiles/SKMC.dir/src/mykmc2.cpp.o -c /home/zln/SKMC/src/mykmc2.cpp",
+  "file": "/home/zln/SKMC/src/mykmc2.cpp"
 }
 ]

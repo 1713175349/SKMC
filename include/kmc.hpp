@@ -100,7 +100,7 @@ int kmc::choose_event(double *dt){
     }
     int a=0,b=len-1,middle;
     double r=dis(gen)*rate_list[len-1];
-    *dt=log(r/rate_list[len-1])/rate_list[len-1];
+    *dt=-log(r/rate_list[len-1])/rate_list[len-1];
     if (r<=rate_list[0]){
         return ev[0];
     }
@@ -162,7 +162,7 @@ int kmc::add_all_event_of_site(int siteid){
                 now_event->embed_index=i;
                 now_event->frame_index=frameid;
                 now_event->frame_e_index=k;
-                now_event->rate=getrate(siteid,frameid,k);
+                now_event->rate=getrate(siteid,frameid,now_event->id);
                 now_event->type=-1;//表示为frame定义的类型
                 num_e ++;
                 nsite->site_events.push_back(now_event->id);
@@ -179,7 +179,7 @@ int kmc::update_site_event(int siteid){
 
 double kmc::getrate(int siteid,int frame_id,int eventid){
     
-    switch (eventid)
+    switch (event_storage[eventid].frame_e_index)
     {
     case 0:
         return exp(-0.5/kT);

@@ -1,6 +1,6 @@
 #include "kmc.hpp"
 #include<glog/logging.h>
-#define SEED 33
+#define SEED 31
 extern "C"{
     #include "lua.h"
     #include "lauxlib.h"
@@ -14,6 +14,7 @@ private:
 public:
     int Nsteps = 0;
     int Num_site1=0;
+    int chg_site[14] = {28,21,20,21,20,21,20,0,20,21,21,21,0,0};//定义事件中改变的site
     mykmc();
     double center[3];
     void update_center();
@@ -27,6 +28,7 @@ public:
     int init_concetration();//初始化浓度
     int add_all_event_of_site(int siteid) override;
     int perform_with_event(int change_event) override;
+    int reduce_concentration_after_growth(int eventid);//在事件执行后更新每个点的浓度
     int run_one_step() override;
     int init() override;
     int update_rate_after_concentration_changed();//在浓度改变后更新事件速率
@@ -83,7 +85,7 @@ double mykmc::lua_get_rate(double x,double y, double z,int frameid,int eventid,d
 double mykmc::getConcentration(int siteid,int frame_id,int eventid){
     site &ns=lattice->sitelist[siteid];
     event &ne=event_storage[eventid];
-    int chg_site[14] = {28,21,20,21,20,21,20,0,20,21,21,21,0,0};//定义事件中改变的site
+    
     if (frame_id == 0){
         int change_site_id = ns.embed_list[ne.embed_index][chg_site[ne.frame_e_index]];
         return lattice->sitelist[change_site_id].data[0];
@@ -94,13 +96,30 @@ double mykmc::getConcentration(int siteid,int frame_id,int eventid){
     return 1;
 }
 
+int mykmc::reduce_concentration_after_growth(int eventid){
+    event &ne=event_storage[eventid];
+    site &ns=lattice->sitelist[ne.event_site];
+    double m=10;
+    if (ne.frame_index == 0){
+        int change_site_id = ns.embed_list[ne.embed_index][chg_site[ne.frame_e_index]];
+        lattice->sitelist[change_site_id].data[0]=0;
+        for (auto i : lattice->sitelist[change_site_id].neighbors){
+            lattice->sitelist[i].data[0] -= m;
+            if(lattice->sitelist[i].data[0]<0){
+                lattice->sitelist[i].data[0] = 0;
+            }
+        }
+    }
+    return 0;
+}
+
 /*
 获取事件速率，暂时不考虑浓度影响
 */
 double mykmc::getrate(int siteid,int frame_id,int eventid){
     site &ns=lattice->sitelist[siteid];
     event &ne=event_storage[eventid];
-    double rate[]={0.5,0.4,0.4,0.4,0.4,0.6,0.5,1.3,0.55,0.55,0.5,0.65,0.5,0.3};
+    double rate[]={0.5,0.4,0.4,0.4,0.4,0.6,0.5,0.7,0.55,0.55,0.5,0.65,0.55,0.4};
     //int chg_site[14] = {28,21,20,21,20,21,20,0,20,21,21,21,0,0};//定义事件中改变的site
     // if (frame_id == 0){
         //int change_site_id = ns.embed_list[ne.embed_index][chg_site[ne.frame_e_index]];
@@ -151,7 +170,7 @@ int mykmc::diffusion_all(double t){//TODO
                 nbconcsum += lattice->sitelist[j].data[0];
             }
         }
-        lattice->sitelist[i].data[1] = lattice->sitelist[i].data[0]-0.001*(nbnum*lattice->sitelist[i].data[0]-nbconcsum);
+        lattice->sitelist[i].data[1] = lattice->sitelist[i].data[0]-0.0001*(nbnum*lattice->sitelist[i].data[0]-nbconcsum);
     }
     for(auto i:lattice->mysites){
         if(lattice->sitelist[i].state != 0){continue;}
@@ -164,6 +183,7 @@ int mykmc::perform_with_event(int change_event){
     if (event_storage[change_event].type==-1&&event_storage[change_event].frame_index==0){
         perform_with_frame_event(change_event);
         //生长之后应该改变扩散
+        reduce_concentration_after_growth(change_event);
         update_events_after_perform(change_event);
         Num_site1 ++;
     }else if(event_storage[change_event].type==1){//扩散事件
@@ -283,7 +303,7 @@ int main(int argc,char **argv){
         // fp<<aa.lattice->out_to_xyz(1);
         // fp<<"\n";
         // }
-        if(aa.Num_site1>=8000){
+        if(aa.Num_site1>=5000){
             break;
         }
     }
